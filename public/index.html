@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GEO Content Workbench</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">GEO Content Loop</p>
+        <h1>从关键词到可审核内容</h1>
+      </div>
+      <div class="top-actions">
+        <button id="loadRulesBtn" class="ghost">载入 GEO 规则</button>
+        <button id="saveBtn">保存工作区</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="panel left-panel">
+        <section>
+          <h2>工作流</h2>
+          <ol class="steps">
+            <li class="active">关键词输入</li>
+            <li>选题 5-10 个</li>
+            <li>内容生成</li>
+            <li>内容审核</li>
+            <li>最终输出</li>
+          </ol>
+        </section>
+
+        <section>
+          <h2>上传内容</h2>
+          <label class="dropzone" for="fileInput">
+            <span>选择 TXT / MD / CSV / JSON / Word / Excel / PPT</span>
+            <small>上传内容会进入对话上下文，也可插入编辑器</small>
+          </label>
+          <input id="fileInput" type="file" multiple accept=".txt,.md,.csv,.json,.html,.htm,.docx,.xlsx,.pptx,.doc,.xls,.ppt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+          <div id="fileList" class="file-list"></div>
+          <button id="insertUploadBtn" class="ghost full">插入到编辑区</button>
+        </section>
+
+        <section>
+          <h2>API 切换</h2>
+          <label>
+            供应商
+            <select id="providerPreset">
+              <option value="local">本地模拟</option>
+              <option value="openai">OpenAI Compatible</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+              <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+              <option value="doubao">豆包 / 火山方舟</option>
+              <option value="qwen">通义千问 OpenAI 兼容</option>
+              <option value="custom">自定义</option>
+            </select>
+          </label>
+          <label>
+            Base URL
+            <input id="baseUrl" placeholder="https://api.example.com/v1" />
+          </label>
+          <label>
+            Model
+            <input id="model" placeholder="gpt-4.1-mini / deepseek-chat" />
+          </label>
+          <label>
+            API Key
+            <input id="apiKey" type="password" placeholder="仅保存在本机浏览器" />
+          </label>
+          <p class="hint">接口按 OpenAI `/chat/completions` 格式转发。</p>
+        </section>
+      </aside>
+
+      <section class="panel editor-panel">
+        <div class="editor-head">
+          <div>
+            <h2>内容编辑器</h2>
+            <p>上传资料、关键词、初稿和审核结果都可以在这里修改。</p>
+          </div>
+          <div class="mode-switch">
+            <button data-mode="选题生成" class="modeBtn">选题</button>
+            <button data-mode="内容生成" class="modeBtn">成文</button>
+            <button data-mode="内容审核" class="modeBtn">审核</button>
+          </div>
+        </div>
+
+        <div class="keyword-row">
+          <input id="keywordInput" placeholder="输入关键词，例如：GEO服务、加盟品牌AI搜索优化" />
+          <button id="topicBtn">生成选题</button>
+        </div>
+
+        <textarea id="editor" spellcheck="false" placeholder="在这里编辑内容。也可以上传资料后插入，或让右侧助手生成。"></textarea>
+
+        <div class="output-tools">
+          <button id="generateBtn">按规则生成内容</button>
+          <button id="reviewBtn" class="ghost">审核当前内容</button>
+          <button id="clearBtn" class="ghost">清空</button>
+        </div>
+      </section>
+
+      <aside class="panel chat-panel">
+        <div class="chat-head">
+          <div>
+            <h2>对话助手</h2>
+            <p id="providerStatus">当前：本地模拟</p>
+          </div>
+          <button id="resetChatBtn" class="ghost">重置</button>
+        </div>
+        <div id="chatLog" class="chat-log"></div>
+        <div class="chat-input">
+          <textarea id="chatInput" placeholder="告诉我你要做什么，例如：基于关键词生成10个GEO选题"></textarea>
+          <button id="sendBtn">发送</button>
+        </div>
+      </aside>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

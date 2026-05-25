@@ -1,0 +1,18 @@
+{
+  "name": "geo-content-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GEO content workflow workbench with upload, editing, chat, and switchable OpenAI-compatible API providers.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "xlsx": "^0.18.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
