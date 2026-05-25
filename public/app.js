@@ -11,6 +11,7 @@ const presets = {
   deepseek: { type: "deepseek", name: "DeepSeek", baseUrl: "https://api.deepseek.com", model: "deepseek-v4-flash" },
   "deepseek-v4-flash": { type: "deepseek", name: "DeepSeek V4 Flash", baseUrl: "https://api.deepseek.com", model: "deepseek-v4-flash" },
   "deepseek-v4-pro": { type: "deepseek", name: "DeepSeek V4 Pro", baseUrl: "https://api.deepseek.com", model: "deepseek-v4-pro" },
+  siliconflow: { type: "siliconflow", name: "硅基流动", baseUrl: "https://api.siliconflow.cn/v1", model: "deepseek-ai/DeepSeek-V3" },
   doubao: { type: "doubao", name: "豆包 / 火山方舟", baseUrl: "https://ark.cn-beijing.volces.com/api/v3", model: "ep-你的方舟推理接入点ID" },
   qwen: { type: "qwen", name: "通义千问", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-plus" },
   custom: { type: "custom", name: "自定义", baseUrl: "", model: "" }

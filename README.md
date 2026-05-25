@@ -17,6 +17,7 @@
   - DeepSeek
   - DeepSeek V4 Flash
   - DeepSeek V4 Pro
+  - 硅基流动
   - 豆包 / 火山方舟
   - 通义千问 OpenAI 兼容
   - 自定义 OpenAI-compatible endpoint
@@ -191,3 +192,13 @@ Model: ep-你的方舟推理接入点ID
 ```
 
 豆包在火山方舟里通常需要先创建推理接入点，然后把接入点 ID 填到 `Model` 字段。
+
+### 硅基流动
+
+```text
+Base URL: https://api.siliconflow.cn/v1
+Model: deepseek-ai/DeepSeek-V3
+Environment Variable: SILICONFLOW_API_KEY
+```
+
+线上部署建议把 Key 配到 Vercel 环境变量 `SILICONFLOW_API_KEY`，前端 API Key 留空即可调用。

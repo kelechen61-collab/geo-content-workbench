@@ -164,11 +164,14 @@ async function handleChat(req, res) {
     const endpoint = normalizedBaseUrl.endsWith("/chat/completions")
       ? normalizedBaseUrl
       : normalizedBaseUrl + "/chat/completions";
+    const apiKey = provider.type === "siliconflow" && process.env.SILICONFLOW_API_KEY
+      ? process.env.SILICONFLOW_API_KEY
+      : provider.apiKey;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${provider.apiKey || ""}`
+        authorization: `Bearer ${apiKey || ""}`
       },
       body: JSON.stringify({
         model: provider.model,
