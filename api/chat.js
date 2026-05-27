@@ -24,13 +24,19 @@ export default async function handler(req, res) {
       });
     }
 
-    const normalizedBaseUrl = provider.baseUrl.replace(/\/$/, "");
+    const normalizedBaseUrl = (provider.type === "siliconflow"
+      ? "https://api.siliconflow.cn/v1"
+      : provider.baseUrl
+    ).replace(/\/$/, "");
     const endpoint = normalizedBaseUrl.endsWith("/chat/completions")
       ? normalizedBaseUrl
       : normalizedBaseUrl + "/chat/completions";
     const apiKey = provider.type === "siliconflow" && process.env.SILICONFLOW_API_KEY
       ? process.env.SILICONFLOW_API_KEY
       : provider.apiKey;
+    const model = String(provider.model || "")
+      .replace(/[\u2010-\u2015]/g, "-")
+      .trim() || (provider.type === "siliconflow" ? "deepseek-ai/DeepSeek-V3" : provider.model);
 
     const response = await fetch(endpoint, {
       method: "POST",
@@ -39,7 +45,7 @@ export default async function handler(req, res) {
         authorization: `Bearer ${apiKey || ""}`
       },
       body: JSON.stringify({
-        model: provider.model,
+        model,
         temperature: Number(provider.temperature ?? 0.3),
         messages: [
           { role: "system", content: makeSystemPrompt(mode, body.ruleContext) },
