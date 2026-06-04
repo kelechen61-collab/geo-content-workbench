@@ -2,7 +2,7 @@
   "name": "geo-content-workbench",
   "version": "1.0.0",
   "private": true,
-  "description": "GEO content workflow workbench with upload, editing, chat, and switchable OpenAI-compatible API providers.",
+  "description": "Sales-ready GEO audit and AI keyword visibility detector.",
   "type": "module",
   "scripts": {
     "start": "node server.js",

@@ -3,120 +3,288 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GEO Content Workbench</title>
+    <meta name="description" content="面向前端销售的 GEO 客户初轮检测与 AI 关键词展示率诊断工具。" />
+    <meta name="theme-color" content="#176f86" />
+    <title>GEO 客户初轮检测台</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="topbar">
+    <header class="shell-head">
+      <div class="brand-mark" aria-hidden="true">G</div>
       <div>
-        <p class="eyebrow">GEO Content Loop</p>
-        <h1>从关键词到可审核内容</h1>
+        <p class="eyebrow">Generative Engine Optimization</p>
+        <h1>GEO 客户初轮检测台</h1>
       </div>
-      <div class="top-actions">
-        <button id="loadRulesBtn" class="ghost">载入 GEO 规则</button>
-        <button id="saveBtn">保存工作区</button>
+      <div class="head-actions">
+        <button id="demoBtn" class="secondary page-action active" type="button" data-action="audit-demo">载入示例</button>
+        <button id="visibilityDemoBtn" class="secondary page-action" type="button" data-action="visibility-demo">载入示例</button>
+        <button id="resetBtn" class="icon-btn page-action active" type="button" data-action="audit-reset" aria-label="重置检测">↺</button>
+        <button id="visibilityResetBtn" class="icon-btn page-action" type="button" data-action="visibility-reset" aria-label="重置检测">↺</button>
       </div>
     </header>
 
-    <main class="layout">
-      <aside class="panel left-panel">
-        <section>
-          <h2>工作流</h2>
-          <ol class="steps">
-            <li class="active">关键词输入</li>
-            <li>选题 5-10 个</li>
-            <li>内容生成</li>
-            <li>内容审核</li>
-            <li>最终输出</li>
-          </ol>
-        </section>
+    <nav class="page-nav" aria-label="检测页面">
+      <button class="page-tab active" type="button" data-page="auditPage">客户初检</button>
+      <button class="page-tab" type="button" data-page="visibilityPage">关键词展示检测</button>
+    </nav>
 
-        <section>
-          <h2>上传内容</h2>
-          <label class="dropzone" for="fileInput">
-            <span>选择 TXT / MD / CSV / JSON / Word / Excel / PPT</span>
-            <small>上传内容会进入对话上下文，也可插入编辑器</small>
-          </label>
-          <input id="fileInput" type="file" multiple accept=".txt,.md,.csv,.json,.html,.htm,.docx,.xlsx,.pptx,.doc,.xls,.ppt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
-          <div id="fileList" class="file-list"></div>
-          <button id="insertUploadBtn" class="ghost full">插入到编辑区</button>
-        </section>
+    <section class="product-brief" aria-label="产品说明">
+      <article>
+        <span>01</span>
+        <h2>销售现场快检</h2>
+        <p>用客户已有信息快速判断 GEO 基础状态，输出风险、资产和下一步沟通话术。</p>
+      </article>
+      <article>
+        <span>02</span>
+        <h2>关键词展示诊断</h2>
+        <p>围绕 DeepSeek、豆包、腾讯元宝等平台模拟展示率、前三率、首位率和中正率。</p>
+      </article>
+      <article>
+        <span>03</span>
+        <h2>可复制交付报告</h2>
+        <p>检测结果可直接复制或导出明细，方便进入客户首轮沟通和内部评估。</p>
+      </article>
+    </section>
 
-        <section>
-          <h2>API 切换</h2>
+    <main id="auditPage" class="workspace page active">
+      <section class="intake">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Step 01</p>
+            <h2>客户信息</h2>
+          </div>
+          <span class="status-pill">首轮诊断</span>
+        </div>
+
+        <form id="auditForm" class="form-grid">
           <label>
-            供应商
-            <select id="providerPreset">
-              <option value="local">本地模拟</option>
-              <option value="openai">OpenAI Compatible</option>
-              <option value="deepseek">DeepSeek</option>
-              <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
-              <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-              <option value="siliconflow">硅基流动</option>
-              <option value="doubao">豆包 / 火山方舟</option>
-              <option value="qwen">通义千问 OpenAI 兼容</option>
-              <option value="custom">自定义</option>
+            公司名称
+            <input id="companyName" autocomplete="organization" placeholder="例如：某某智能科技有限公司" />
+          </label>
+          <label>
+            官网 / 主站
+            <input id="website" inputmode="url" placeholder="https://www.example.com" />
+          </label>
+          <label>
+            所属行业
+            <select id="industry">
+              <option value="saas">SaaS / 企业服务</option>
+              <option value="retail">零售 / 加盟</option>
+              <option value="medical">医疗 / 健康</option>
+              <option value="education">教育 / 培训</option>
+              <option value="manufacturing">制造 / B2B</option>
+              <option value="finance">金融 / 保险</option>
+              <option value="local">本地生活 / 门店</option>
             </select>
           </label>
           <label>
-            Base URL
-            <input id="baseUrl" placeholder="https://api.example.com/v1" />
+            核心业务
+            <input id="business" placeholder="例如：AI 搜索优化服务、招商加盟系统" />
           </label>
-          <label>
-            Model
-            <input id="model" placeholder="gpt-4.1-mini / deepseek-chat" />
+          <label class="wide">
+            重点关键词
+            <textarea id="keywords" placeholder="每行一个，例如：&#10;GEO 服务&#10;AI 搜索优化&#10;品牌怎么被 ChatGPT 推荐"></textarea>
           </label>
-          <label>
-            API Key
-            <input id="apiKey" type="password" placeholder="仅保存在本机浏览器" />
+          <label class="wide">
+            主要竞品
+            <textarea id="competitors" placeholder="每行一个竞品品牌或网站"></textarea>
           </label>
-          <p class="hint">接口按 OpenAI `/chat/completions` 格式转发。</p>
-        </section>
-      </aside>
+          <label class="wide">
+            已有素材
+            <textarea id="assets" placeholder="官网栏目、案例、白皮书、知乎/小红书/公众号内容、媒体报道、百科资料等"></textarea>
+          </label>
+          <button class="primary wide" type="submit">开始检测</button>
+        </form>
+      </section>
 
-      <section class="panel editor-panel">
-        <div class="editor-head">
+      <section class="summary">
+        <div class="score-card">
+          <div class="score-ring" aria-label="GEO 成熟度评分">
+            <span id="scoreValue">72</span>
+            <small>GEO Score</small>
+          </div>
           <div>
-            <h2>内容编辑器</h2>
-            <p>上传资料、关键词、初稿和审核结果都可以在这里修改。</p>
-          </div>
-          <div class="mode-switch">
-            <button data-mode="选题生成" class="modeBtn">选题</button>
-            <button data-mode="内容生成" class="modeBtn">成文</button>
-            <button data-mode="内容审核" class="modeBtn">审核</button>
+            <p class="eyebrow">Step 02</p>
+            <h2 id="scoreTitle">可被 AI 理解，但推荐理由不足</h2>
+            <p id="scoreNote">系统会根据实体清晰度、内容资产、可信证据、问题覆盖和竞品压力生成初轮诊断。</p>
           </div>
         </div>
 
-        <div class="keyword-row">
-          <input id="keywordInput" placeholder="输入关键词，例如：GEO服务、加盟品牌AI搜索优化" />
-          <button id="topicBtn">生成选题</button>
-        </div>
+        <div class="metric-grid" id="metricGrid"></div>
 
-        <textarea id="editor" spellcheck="false" placeholder="在这里编辑内容。也可以上传资料后插入，或让右侧助手生成。"></textarea>
-
-        <div class="output-tools">
-          <button id="generateBtn">按规则生成内容</button>
-          <button id="reviewBtn" class="ghost">审核当前内容</button>
-          <button id="clearBtn" class="ghost">清空</button>
+        <div class="query-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">AI Query Simulation</p>
+              <h2>用户会这样问 AI</h2>
+            </div>
+            <button id="copyReportBtn" class="secondary" type="button">复制报告</button>
+          </div>
+          <div id="queryList" class="query-list"></div>
         </div>
       </section>
 
-      <aside class="panel chat-panel">
-        <div class="chat-head">
+      <section class="report">
+        <div class="section-head">
           <div>
-            <h2>对话助手</h2>
-            <p id="providerStatus">当前：本地模拟</p>
+            <p class="eyebrow">Step 03</p>
+            <h2>初轮结论</h2>
           </div>
-          <button id="resetChatBtn" class="ghost">重置</button>
+          <span id="reportTag" class="status-pill warn">需补强证据</span>
         </div>
-        <div id="chatLog" class="chat-log"></div>
-        <div class="chat-input">
-          <textarea id="chatInput" placeholder="告诉我你要做什么，例如：基于关键词生成10个GEO选题"></textarea>
-          <button id="sendBtn">发送</button>
+
+        <div class="tabs" role="tablist" aria-label="检测报告视图">
+          <button class="tab active" type="button" data-view="risks">风险</button>
+          <button class="tab" type="button" data-view="assets">资产</button>
+          <button class="tab" type="button" data-view="actions">行动</button>
         </div>
-      </aside>
+
+        <div id="reportContent" class="report-content"></div>
+
+        <div class="next-step">
+          <h3>客户沟通话术</h3>
+          <p id="pitchText">你们目前不是没有内容，而是缺少能被生成式搜索直接引用的“标准答案资产”。首轮建议先修正品牌事实，再围绕高意向问题补齐证据与 FAQ。</p>
+        </div>
+      </section>
     </main>
 
-    <script src="/app.js" type="module"></script>
+    <main id="visibilityPage" class="visibility-workspace page">
+      <section class="intake visibility-input">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Keyword Visibility</p>
+            <h2>检测配置</h2>
+          </div>
+          <span class="status-pill">销售快检</span>
+        </div>
+
+        <form id="visibilityForm" class="form-grid">
+          <label>
+            目标品牌
+            <input id="targetBrand" placeholder="例如：云栖增长科技" />
+          </label>
+          <label>
+            所属业务
+            <input id="visibilityBusiness" placeholder="例如：GEO / AEO 内容优化服务" />
+          </label>
+          <label class="wide">
+            检测关键词
+            <textarea id="visibilityKeywords" placeholder="每行一个，例如：&#10;GEO 服务哪家好&#10;AI 搜索优化公司&#10;品牌怎么被豆包推荐"></textarea>
+          </label>
+          <label class="wide">
+            对比品牌
+            <textarea id="visibilityCompetitors" placeholder="每行一个竞品品牌"></textarea>
+          </label>
+          <label>
+            每个平台采样次数
+            <select id="sampleCount">
+              <option value="3" selected>3 次</option>
+              <option value="4">4 次</option>
+              <option value="5">5 次</option>
+            </select>
+          </label>
+
+          <div class="platform-box">
+            <p>AI 平台</p>
+            <label><input type="checkbox" name="platform" value="DeepSeek" checked /> DeepSeek</label>
+            <label><input type="checkbox" name="platform" value="豆包" checked /> 豆包</label>
+            <label><input type="checkbox" name="platform" value="腾讯元宝" checked /> 腾讯元宝</label>
+            <label><input type="checkbox" name="platform" value="Kimi" checked /> Kimi</label>
+            <label><input type="checkbox" name="platform" value="通义千问" /> 通义千问</label>
+            <label><input type="checkbox" name="platform" value="文心一言" /> 文心一言</label>
+          </div>
+
+          <button id="runVisibilityBtn" class="primary wide" type="submit">提交后台跑数</button>
+        </form>
+      </section>
+
+      <section class="visibility-summary">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Brand Exposure</p>
+            <h2 id="visibilityTitle">品牌在 AI 答案中的展示情况</h2>
+          </div>
+          <div class="section-actions">
+            <button id="copyVisibilityBtn" class="secondary" type="button">复制报告</button>
+            <button id="downloadVisibilityBtn" class="secondary" type="button">导出明细</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <article class="kpi-card">
+            <span>展示率</span>
+            <strong id="mentionRate">0%</strong>
+            <p>答案中提及目标品牌的比例</p>
+          </article>
+          <article class="kpi-card">
+            <span>前三率</span>
+            <strong id="top3Rate">0%</strong>
+            <p>目标品牌进入推荐前三的比例</p>
+          </article>
+          <article class="kpi-card">
+            <span>首位率</span>
+            <strong id="firstRate">0%</strong>
+            <p>目标品牌成为第一推荐的比例</p>
+          </article>
+          <article class="kpi-card">
+            <span>中正率</span>
+            <strong id="neutralRate">0%</strong>
+            <p>已展示答案中，中性或正向口径比例</p>
+          </article>
+          <article class="kpi-card">
+            <span>平均名次</span>
+            <strong id="avgRank">-</strong>
+            <p>仅统计已出现的答案排名</p>
+          </article>
+        </div>
+
+        <div id="platformCards" class="platform-cards"></div>
+
+        <div class="sales-script">
+          <h3>销售判断</h3>
+          <p id="visibilityPitch">输入关键词后，可快速判断客户品牌在主流 AI 平台答案中的可见度缺口。</p>
+        </div>
+      </section>
+
+      <section class="visibility-detail">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Keyword Matrix</p>
+            <h2>关键词 × AI 平台明细</h2>
+          </div>
+          <span id="visibilityTag" class="status-pill warn">待检测</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>关键词</th>
+                <th>AI 平台</th>
+                <th>采样</th>
+                <th>目标品牌</th>
+                <th>排名</th>
+                <th>口径</th>
+                <th>竞品占位</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody id="visibilityRows"></tbody>
+          </table>
+        </div>
+
+        <div class="next-step">
+          <h3>优先修复方向</h3>
+          <div id="visibilityFindings" class="report-content"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>检测口径：当前版本用于销售首轮诊断，展示与口径指标为规则化模拟结果；接入真实平台查询后可替换为正式监测数据。</p>
+    </footer>
+
+    <script src="/app.js?v=20260528-runner" type="module"></script>
   </body>
 </html>
