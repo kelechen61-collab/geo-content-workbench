@@ -31,6 +31,7 @@ const demoData = {
 
 const visibilityDemoData = {
   targetBrand: "云栖增长科技",
+  brandAliases: "云栖增长, 云栖GEO",
   visibilityBusiness: "GEO / AEO 内容优化服务",
   visibilityKeywords: "GEO 服务哪家好\nAI 搜索优化公司\n品牌怎么被豆包推荐\n生成式搜索引擎优化服务\nChatGPT 品牌推荐优化",
   visibilityCompetitors: "传统 SEO 代运营\n内容营销机构\nAI 问答优化顾问\n增长咨询公司"
@@ -298,7 +299,12 @@ function buildVisibilityReport() {
       tone,
       isNeutral: tone === "中性" || tone === "正向",
       competitor,
-      status: rank === 0 ? "未展示" : rank === 1 ? "首位" : rank <= 3 ? "前三" : "出现"
+      status: rank === 0 ? "未展示" : rank === 1 ? "首位" : rank <= 3 ? "前三" : "出现",
+      matchedAlias: rank > 0 ? brand : "",
+      rawAnswer: "",
+      mode: "模拟检测",
+      sampledAt: new Date().toISOString(),
+      sourceModel: "local-rule-sampler"
     };
   })));
 
@@ -344,7 +350,10 @@ function buildVisibilityReport() {
     neutralRate: percent(neutral, rankedRows.length),
     avgRank: avgRankValue,
     findings,
-    tag: percent(mentioned, total) >= 75 ? "展示基础较好" : percent(mentioned, total) >= 45 ? "存在展示缺口" : "展示明显不足"
+    tag: percent(mentioned, total) >= 75 ? "展示基础较好" : percent(mentioned, total) >= 45 ? "存在展示缺口" : "展示明显不足",
+    mode: "模拟检测",
+    evidenceNote: "当前为规则化模拟结果，用于销售初筛，不等同于真实平台搜索结果。",
+    generatedAt: new Date().toISOString()
   };
 }
 
@@ -376,6 +385,12 @@ function renderVisibilityRows(rows) {
       <td><span class="tone-badge ${row.tone === "偏负" ? "negative" : row.tone === "正向" ? "positive" : ""}">${escapeHtml(row.tone)}</span></td>
       <td>${escapeHtml(row.competitor)}</td>
       <td><span class="rank-badge ${row.rank === 0 ? "miss" : row.rank === 1 ? "first" : row.rank <= 3 ? "top" : ""}">${escapeHtml(row.status)}</span></td>
+      <td>${escapeHtml(row.matchedAlias || "-")}</td>
+      <td>
+        ${row.rawAnswer
+          ? `<details><summary>查看证据</summary><p>${escapeHtml(row.rawAnswer)}</p><small>${escapeHtml(row.sampledAt || "")} · ${escapeHtml(row.sourceModel || row.mode || "")}</small></details>`
+          : `<span class="muted-cell">模拟无原文</span>`}
+      </td>
     </tr>
   `).join("");
 }
@@ -390,6 +405,10 @@ function renderVisibilityReport(report) {
   $("avgRank").textContent = report.avgRank;
   $("visibilityTag").textContent = report.tag;
   $("visibilityTag").classList.toggle("warn", report.mentionRate < 75);
+  $("samplingMode").textContent = `当前模式：${report.mode || "模拟检测"}`;
+  $("samplingMode").classList.toggle("real", report.mode === "真实采样");
+  $("samplingMeta").textContent = `采样数：${report.rows.length} 条 · 生成时间：${report.generatedAt ? new Date(report.generatedAt).toLocaleString("zh-CN") : "-"}`;
+  $("evidenceNote").textContent = report.evidenceNote || "已生成检测结果。";
   $("visibilityPitch").textContent = `${report.brand} 当前按每个平台 ${report.sampleCount || 3} 次采样跑数，展示率为 ${report.mentionRate}%，前三率为 ${report.top3Rate}%，首位率为 ${report.firstRate}%，中正率为 ${report.neutralRate}%。销售沟通重点可以放在“AI 推荐位被竞品占用”“标准答案资产不足”和“品牌口径需要校准”三个问题上。`;
   renderPlatformCards(report.platformStats);
   renderVisibilityRows(report.rows);
@@ -411,7 +430,7 @@ function fillVisibilityForm(data) {
 }
 
 function resetVisibilityForm() {
-  ["targetBrand", "visibilityBusiness", "visibilityKeywords", "visibilityCompetitors"].forEach((id) => {
+  ["targetBrand", "brandAliases", "visibilityBusiness", "visibilityKeywords", "visibilityCompetitors"].forEach((id) => {
     $(id).value = "";
   });
   setPlatforms(["DeepSeek", "豆包", "腾讯元宝"]);
@@ -427,7 +446,10 @@ function visibilityReportText(report) {
     `首位率：${report.firstRate}%`,
     `中正率：${report.neutralRate}%`,
     `平均名次：${report.avgRank}`,
+    `检测模式：${report.mode || "模拟检测"}`,
+    `生成时间：${report.generatedAt || "-"}`,
     `采样次数：每个平台 ${report.sampleCount || 3} 次`,
+    `证据说明：${report.evidenceNote || "-"}`,
     "",
     "平台表现：",
     ...report.platformStats.map((item) => `${item.platform}：展示率 ${item.mentionRate}% / 前三率 ${item.top3Rate}% / 首位率 ${item.firstRate}% / 中正率 ${item.neutralRate}%`),
@@ -442,7 +464,7 @@ function csvCell(value) {
 }
 
 function downloadVisibilityCsv(report) {
-  const header = ["关键词", "AI平台", "采样", "目标品牌", "排名", "口径", "竞品占位", "状态"];
+  const header = ["关键词", "AI平台", "采样", "目标品牌", "排名", "口径", "竞品占位", "状态", "命中别名", "检测模式", "采样时间", "来源模型", "原始回答"];
   const rows = report.rows.map((row) => [
     row.keyword,
     row.platform,
@@ -451,7 +473,12 @@ function downloadVisibilityCsv(report) {
     row.rank ? `第 ${row.rank} 位` : "-",
     row.tone,
     row.competitor,
-    row.status
+    row.status,
+    row.matchedAlias || "",
+    row.mode || report.mode || "",
+    row.sampledAt || "",
+    row.sourceModel || "",
+    row.rawAnswer || ""
   ]);
   const csv = [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
@@ -486,6 +513,7 @@ async function runVisibilityAudit() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         brand: $("targetBrand").value.trim(),
+        aliases: lines($("brandAliases").value),
         business: $("visibilityBusiness").value.trim(),
         keywords: lines($("visibilityKeywords").value),
         competitors: lines($("visibilityCompetitors").value),

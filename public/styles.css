@@ -647,6 +647,38 @@ textarea:focus {
   padding-top: 16px;
 }
 
+.evidence-note {
+  margin-top: 10px;
+  border-radius: 7px;
+  background: #edf4f6;
+  padding: 10px;
+  font-size: 12px;
+}
+
+.mode-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: -4px 0 12px;
+}
+
+.mode-strip span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border-radius: 999px;
+  background: #eef1f4;
+  color: var(--muted);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.mode-strip span.real {
+  background: #e7f3ee;
+  color: var(--good);
+}
+
 .table-wrap {
   max-height: 58vh;
   overflow: auto;
@@ -657,7 +689,7 @@ textarea:focus {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 1080px;
   background: var(--surface);
 }
 
@@ -733,6 +765,33 @@ td {
 .tone-badge.negative {
   background: #fff0e8;
   color: var(--warn);
+}
+
+details {
+  max-width: 360px;
+}
+
+summary {
+  cursor: pointer;
+  color: var(--primary-dark);
+  font-weight: 900;
+}
+
+details p {
+  max-height: 170px;
+  overflow: auto;
+  margin: 8px 0;
+  border-radius: 7px;
+  background: #f4f6f8;
+  padding: 10px;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+details small,
+.muted-cell {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .site-footer {

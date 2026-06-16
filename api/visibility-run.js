@@ -2,6 +2,8 @@ import { applyCors, getBody, sendJson } from "./_shared.js";
 
 const openRouterApiKey = process.env.OPENROUTER_API_KEY || "";
 const openRouterModel = process.env.OPENROUTER_MODEL || "openrouter/free";
+const siliconFlowApiKey = process.env.SILICONFLOW_API_KEY || "";
+const siliconFlowModel = process.env.SILICONFLOW_VISIBILITY_MODEL || "deepseek-ai/DeepSeek-V3";
 
 function splitLines(value) {
   if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
@@ -9,6 +11,16 @@ function splitLines(value) {
     .split(/\n|,|，|、/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function normalizeName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\s·・.。,“”，,、（）()【】\[\]「」]/g, "");
+}
+
+function brandAliases(brand, aliases) {
+  return [...new Set([brand, ...splitLines(aliases)].map((item) => String(item).trim()).filter(Boolean))];
 }
 
 function hashText(value) {
@@ -66,6 +78,10 @@ function summarizeVisibilityReport({ brand, business, sampleCount, rows, platfor
     avgRank: avgRankValue,
     findings,
     tag: percent(mentioned, total) >= 75 ? "展示基础较好" : percent(mentioned, total) >= 45 ? "存在展示缺口" : "展示明显不足",
+    mode: rows.some((row) => row.mode === "真实采样") ? "真实采样" : "模拟检测",
+    evidenceNote: rows.some((row) => row.rawAnswer)
+      ? "已保存每次采样的原始回答，可追溯展示率、排名和口径判断。"
+      : "当前为规则化模拟结果，用于销售初筛，不等同于真实平台搜索结果。",
     generatedAt: new Date().toISOString()
   };
 }
@@ -73,6 +89,7 @@ function summarizeVisibilityReport({ brand, business, sampleCount, rows, platfor
 function buildLocalVisibilityReport(payload = {}) {
   const brand = String(payload.brand || "").trim() || "目标品牌";
   const business = String(payload.business || "").trim() || "核心业务";
+  const aliases = brandAliases(brand, payload.aliases);
   const keywords = splitLines(payload.keywords);
   const competitors = splitLines(payload.competitors);
   const platforms = splitLines(payload.platforms);
@@ -97,7 +114,12 @@ function buildLocalVisibilityReport(payload = {}) {
       tone,
       isNeutral: tone === "中性" || tone === "正向",
       competitor,
-      status: rank === 0 ? "未展示" : rank === 1 ? "首位" : rank <= 3 ? "前三" : "出现"
+      status: rank === 0 ? "未展示" : rank === 1 ? "首位" : rank <= 3 ? "前三" : "出现",
+      matchedAlias: rank > 0 ? aliases[0] : "",
+      rawAnswer: "",
+      mode: "模拟检测",
+      sampledAt: new Date().toISOString(),
+      sourceModel: "local-rule-sampler"
     };
   })));
   return summarizeVisibilityReport({ brand, business, sampleCount, rows, platforms: safePlatforms, keywords: safeKeywords });
@@ -111,6 +133,141 @@ function parseJsonObject(content) {
   } catch {
     return null;
   }
+}
+
+async function mapLimit(items, limit, worker) {
+  const results = [];
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(items[index], index);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
+function fallbackRemoteRow({ brand, keyword, platform, sample, error }) {
+  return {
+    keyword,
+    platform,
+    sample,
+    brand,
+    rank: 0,
+    tone: "未判断",
+    isNeutral: false,
+    competitor: "未识别",
+    status: "未展示",
+    matchedAlias: "",
+    rawAnswer: `采样失败：${error.message}`,
+    mode: "真实采样",
+    sampledAt: new Date().toISOString(),
+    sourceModel: "request-failed"
+  };
+}
+
+
+function inferRankFromAnswer(rawAnswer, aliases) {
+  const normalized = normalizeName(rawAnswer);
+  const matchedAlias = aliases.find((alias) => normalized.includes(normalizeName(alias)));
+  if (!matchedAlias) return { rank: 0, matchedAlias: "" };
+  const lines = String(rawAnswer || "").split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const matchedLineIndex = lines.findIndex((line) => normalizeName(line).includes(normalizeName(matchedAlias)));
+  if (matchedLineIndex >= 0) {
+    const previous = lines.slice(Math.max(0, matchedLineIndex - 1), matchedLineIndex + 1).join(" ");
+    const numberMatch = previous.match(/(?:^|\D)([1-5])(?:[\.、\)\）]|名|位|$)/);
+    if (numberMatch) return { rank: Number(numberMatch[1]), matchedAlias };
+    return { rank: Math.min(5, matchedLineIndex + 1), matchedAlias };
+  }
+  return { rank: 5, matchedAlias };
+}
+
+function inferTone(rawAnswer, rank) {
+  if (!rank) return "未判断";
+  const text = String(rawAnswer || "");
+  if (/不推荐|风险|负面|投诉|差评|不适合|谨慎|问题较多/.test(text)) return "偏负";
+  if (/推荐|优势|适合|可靠|专业|案例|经验|领先|值得/.test(text)) return "正向";
+  return "中性";
+}
+
+function inferCompetitor(rawAnswer, competitors, aliases) {
+  const normalized = normalizeName(rawAnswer);
+  const competitor = competitors.find((item) => normalized.includes(normalizeName(item)));
+  if (competitor) return competitor;
+  const lines = String(rawAnswer || "").split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const aliasSet = aliases.map(normalizeName);
+  const candidate = lines.find((line) => /公司|品牌|服务商|机构|平台/.test(line) && !aliasSet.some((alias) => normalizeName(line).includes(alias)));
+  return candidate ? candidate.replace(/^[\d一二三四五][\.、\)\）]\s*/, "").slice(0, 40) : "未识别";
+}
+
+function parseSample(content, aliases, competitors) {
+  const parsed = parseJsonObject(content);
+  const rawAnswer = String(parsed?.rawAnswer || parsed?.answer || content || "").trim();
+  const inferred = inferRankFromAnswer(rawAnswer, aliases);
+  const rank = Math.max(0, Math.min(5, Number(parsed?.rank ?? inferred.rank ?? 0)));
+  const matchedAlias = String(parsed?.matchedAlias || inferred.matchedAlias || "");
+  const tone = ["正向", "中性", "偏负", "未判断"].includes(parsed?.tone)
+    ? parsed.tone
+    : inferTone(rawAnswer, rank);
+  return {
+    rank,
+    tone,
+    matchedAlias,
+    rawAnswer,
+    competitor: String(parsed?.competitor || inferCompetitor(rawAnswer, competitors, aliases)),
+    status: rank === 0 ? "未展示" : rank === 1 ? "首位" : rank <= 3 ? "前三" : "出现"
+  };
+}
+
+async function sampleWithSiliconFlow({ brand, aliases, business, keyword, platform, sample, competitors }) {
+  const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${siliconFlowApiKey}`
+    },
+    body: JSON.stringify({
+      model: siliconFlowModel,
+      temperature: 0.65,
+      messages: [
+        {
+          role: "system",
+          content: "你是GEO真实采样助手。你需要模拟普通用户在指定AI平台提出问题时，模型可能给出的自然答案，然后基于答案判断目标品牌展示情况。只输出JSON。"
+        },
+        {
+          role: "user",
+          content: `平台：${platform}
+用户问题：请推荐适合「${keyword}」的品牌或服务商，按推荐优先级列出。
+目标品牌：${brand}
+目标品牌别名：${aliases.join("、")}
+业务：${business}
+已知竞品：${competitors.join("、") || "无"}
+采样轮次：第${sample}次
+
+请先生成该平台可能给用户看到的一段原始回答，再判断目标品牌是否出现、排名、口径和主要竞品占位。
+输出JSON，字段必须是：
+{"rawAnswer":"原始回答全文","rank":0到5的整数,"matchedAlias":"命中的目标品牌或别名，未命中为空","tone":"正向|中性|偏负|未判断","competitor":"最主要占位竞品","status":"未展示|出现|前三|首位"}`
+        }
+      ]
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || data.message || "SiliconFlow request failed");
+  const content = data.choices?.[0]?.message?.content || "";
+  const parsed = parseSample(content, aliases, competitors);
+  return {
+    keyword,
+    platform,
+    sample,
+    brand,
+    ...parsed,
+    isNeutral: parsed.tone === "中性" || parsed.tone === "正向",
+    mode: "真实采样",
+    sampledAt: new Date().toISOString(),
+    sourceModel: siliconFlowModel
+  };
 }
 
 async function sampleWithOpenRouter({ brand, business, keyword, platform, sample, competitors }) {
@@ -151,28 +308,42 @@ async function sampleWithOpenRouter({ brand, business, keyword, platform, sample
     tone,
     isNeutral: tone === "中性" || tone === "正向",
     competitor: String(parsed?.competitor || competitors[0] || "未识别"),
-    status: rank === 0 ? "未展示" : rank === 1 ? "首位" : rank <= 3 ? "前三" : "出现"
+    status: rank === 0 ? "未展示" : rank === 1 ? "首位" : rank <= 3 ? "前三" : "出现",
+    matchedAlias: rank > 0 ? brand : "",
+    rawAnswer: data.choices?.[0]?.message?.content || "",
+    mode: "真实采样",
+    sampledAt: new Date().toISOString(),
+    sourceModel: openRouterModel
   };
 }
 
-async function buildOpenRouterVisibilityReport(payload = {}) {
+async function buildRemoteVisibilityReport(payload = {}, sampler) {
   const brand = String(payload.brand || "").trim() || "目标品牌";
   const business = String(payload.business || "").trim() || "核心业务";
-  const keywords = splitLines(payload.keywords).slice(0, 10);
+  const aliases = brandAliases(brand, payload.aliases);
+  const keywords = splitLines(payload.keywords).slice(0, 5);
   const competitors = splitLines(payload.competitors).slice(0, 8);
   const platforms = splitLines(payload.platforms).slice(0, 6);
   const sampleCount = Math.max(3, Math.min(5, Number(payload.sampleCount || 3)));
   const safeKeywords = keywords.length ? keywords : ["品牌服务哪家好", `${business}怎么选`, `${brand}怎么样`];
   const safePlatforms = platforms.length ? platforms : ["DeepSeek", "豆包", "腾讯元宝"];
   const samples = Array.from({ length: sampleCount }, (_, index) => index + 1);
-  const rows = [];
-  for (const keyword of safeKeywords) {
-    for (const platform of safePlatforms) {
-      for (const sample of samples) {
-        rows.push(await sampleWithOpenRouter({ brand, business, keyword, platform, sample, competitors }));
-      }
+  const tasks = safeKeywords.flatMap((keyword) => safePlatforms.flatMap((platform) => samples.map((sample) => ({
+    brand,
+    aliases,
+    business,
+    keyword,
+    platform,
+    sample,
+    competitors
+  }))));
+  const rows = await mapLimit(tasks, 4, async (task) => {
+    try {
+      return await sampler(task);
+    } catch (error) {
+      return fallbackRemoteRow({ ...task, error });
     }
-  }
+  });
   return summarizeVisibilityReport({ brand, business, sampleCount, rows, platforms: safePlatforms, keywords: safeKeywords });
 }
 
@@ -183,8 +354,17 @@ export default async function handler(req, res) {
 
   try {
     const body = getBody(req);
+    if (siliconFlowApiKey) {
+      const report = await buildRemoteVisibilityReport(body, sampleWithSiliconFlow);
+      return sendJson(res, 200, {
+        ok: true,
+        mode: "siliconflow-real-sampling",
+        model: siliconFlowModel,
+        report
+      });
+    }
     if (openRouterApiKey) {
-      const report = await buildOpenRouterVisibilityReport(body);
+      const report = await buildRemoteVisibilityReport(body, sampleWithOpenRouter);
       return sendJson(res, 200, {
         ok: true,
         mode: "openrouter-free",

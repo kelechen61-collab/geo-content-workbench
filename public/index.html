@@ -38,7 +38,7 @@
       <article>
         <span>02</span>
         <h2>关键词展示诊断</h2>
-        <p>围绕 DeepSeek、豆包、腾讯元宝等平台模拟展示率、前三率、首位率和中正率。</p>
+        <p>支持模拟检测与硅基流动真实 API 采样，记录展示率、前三率、首位率和原始回答。</p>
       </article>
       <article>
         <span>03</span>
@@ -165,6 +165,10 @@
             <input id="targetBrand" placeholder="例如：云栖增长科技" />
           </label>
           <label>
+            品牌别名
+            <input id="brandAliases" placeholder="简称/旧称/口语名，用逗号分隔" />
+          </label>
+          <label>
             所属业务
             <input id="visibilityBusiness" placeholder="例如：GEO / AEO 内容优化服务" />
           </label>
@@ -244,6 +248,7 @@
         <div class="sales-script">
           <h3>销售判断</h3>
           <p id="visibilityPitch">输入关键词后，可快速判断客户品牌在主流 AI 平台答案中的可见度缺口。</p>
+          <p id="evidenceNote" class="evidence-note">当前未检测。</p>
         </div>
       </section>
 
@@ -254,6 +259,11 @@
             <h2>关键词 × AI 平台明细</h2>
           </div>
           <span id="visibilityTag" class="status-pill warn">待检测</span>
+        </div>
+
+        <div class="mode-strip">
+          <span id="samplingMode">当前模式：模拟检测</span>
+          <span id="samplingMeta">采样数：-</span>
         </div>
 
         <div class="table-wrap">
@@ -268,6 +278,8 @@
                 <th>口径</th>
                 <th>竞品占位</th>
                 <th>状态</th>
+                <th>命中别名</th>
+                <th>原始回答</th>
               </tr>
             </thead>
             <tbody id="visibilityRows"></tbody>
@@ -282,7 +294,7 @@
     </main>
 
     <footer class="site-footer">
-      <p>检测口径：当前版本用于销售首轮诊断，展示与口径指标为规则化模拟结果；接入真实平台查询后可替换为正式监测数据。</p>
+      <p>检测口径：模拟检测用于销售首轮诊断；真实采样会调用已配置模型、多轮采样并保留原始回答。豆包、通义、腾讯元宝等平台如未接入官方 API，会以当前采样模型模拟对应平台口径。</p>
     </footer>
 
     <script src="/app.js?v=20260528-runner" type="module"></script>
