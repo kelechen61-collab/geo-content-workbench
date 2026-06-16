@@ -10,44 +10,74 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="shell-head">
-      <div class="brand-mark" aria-hidden="true">G</div>
-      <div>
-        <p class="eyebrow">Generative Engine Optimization</p>
-        <h1>GEO 客户初轮检测台</h1>
-      </div>
-      <div class="head-actions">
-        <button id="demoBtn" class="secondary page-action active" type="button" data-action="audit-demo">载入示例</button>
-        <button id="visibilityDemoBtn" class="secondary page-action" type="button" data-action="visibility-demo">载入示例</button>
-        <button id="resetBtn" class="icon-btn page-action active" type="button" data-action="audit-reset" aria-label="重置检测">↺</button>
-        <button id="visibilityResetBtn" class="icon-btn page-action" type="button" data-action="visibility-reset" aria-label="重置检测">↺</button>
-      </div>
-    </header>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="数据追踪导航">
+        <div class="side-logo">
+          <div class="brand-mark" aria-hidden="true">G</div>
+          <div>
+            <strong>GEO 追踪</strong>
+            <span>AI Visibility Lab</span>
+          </div>
+        </div>
+        <nav class="side-nav">
+          <span>数据追踪</span>
+          <button class="page-tab ghost-tab" type="button" data-page="auditPage">数据总览</button>
+          <button class="page-tab active" type="button" data-page="visibilityPage">品牌可见性</button>
+          <button class="ghost-tab" type="button">AI 印象</button>
+          <button class="ghost-tab" type="button">信源分析</button>
+        </nav>
+        <div class="side-card">
+          <span>Sampling</span>
+          <strong>真实采样</strong>
+          <p>多轮测试、原文留痕、别名归一。</p>
+        </div>
+      </aside>
 
-    <nav class="page-nav" aria-label="检测页面">
-      <button class="page-tab active" type="button" data-page="auditPage">客户初检</button>
-      <button class="page-tab" type="button" data-page="visibilityPage">关键词展示检测</button>
-    </nav>
+      <div class="main-shell">
+        <header class="shell-head">
+          <div>
+            <p class="eyebrow">Generative Engine Optimization</p>
+            <h1>GEO 客户初轮检测台</h1>
+            <p class="head-subtitle">监测品牌在 AI 答案中的露出、排名、口径和可追溯证据。</p>
+          </div>
+          <div class="head-actions">
+            <select aria-label="时间范围">
+              <option>近 30 天</option>
+              <option>近 7 天</option>
+              <option>本季度</option>
+            </select>
+            <select aria-label="平台筛选">
+              <option>全部平台</option>
+              <option>DeepSeek</option>
+              <option>豆包</option>
+              <option>腾讯元宝</option>
+            </select>
+          <button id="demoBtn" class="secondary page-action" type="button" data-action="audit-demo">载入示例</button>
+          <button id="visibilityDemoBtn" class="secondary page-action active" type="button" data-action="visibility-demo">载入示例</button>
+          <button id="resetBtn" class="icon-btn page-action" type="button" data-action="audit-reset" aria-label="重置检测">↺</button>
+          <button id="visibilityResetBtn" class="icon-btn page-action active" type="button" data-action="visibility-reset" aria-label="重置检测">↺</button>
+          </div>
+        </header>
 
-    <section class="product-brief" aria-label="产品说明">
-      <article>
-        <span>01</span>
-        <h2>销售现场快检</h2>
-        <p>用客户已有信息快速判断 GEO 基础状态，输出风险、资产和下一步沟通话术。</p>
-      </article>
-      <article>
-        <span>02</span>
-        <h2>关键词展示诊断</h2>
-        <p>支持模拟检测与硅基流动真实 API 采样，记录展示率、前三率、首位率和原始回答。</p>
-      </article>
-      <article>
-        <span>03</span>
-        <h2>可复制交付报告</h2>
-        <p>检测结果可直接复制或导出明细，方便进入客户首轮沟通和内部评估。</p>
-      </article>
-    </section>
+        <section class="product-brief" aria-label="产品说明">
+          <article>
+            <span>01</span>
+            <h2>销售现场快检</h2>
+            <p>客户已有信息快速判断 GEO 基础状态。</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h2>关键词展示诊断</h2>
+            <p>真实 API 采样，记录展示、前三、首位和原始回答。</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h2>可复制交付报告</h2>
+            <p>检测结果可复制或导出明细。</p>
+          </article>
+        </section>
 
-    <main id="auditPage" class="workspace page active">
+    <main id="auditPage" class="workspace page">
       <section class="intake">
         <div class="section-head">
           <div>
@@ -149,7 +179,7 @@
       </section>
     </main>
 
-    <main id="visibilityPage" class="visibility-workspace page">
+    <main id="visibilityPage" class="visibility-workspace page active">
       <section class="intake visibility-input">
         <div class="section-head">
           <div>
@@ -243,7 +273,45 @@
           </article>
         </div>
 
-        <div id="platformCards" class="platform-cards"></div>
+        <div class="dashboard-split">
+          <section class="trend-card" aria-label="品牌露出趋势">
+            <div class="section-head compact">
+              <div>
+                <p class="eyebrow">Trend</p>
+                <h3>品牌露出趋势</h3>
+              </div>
+              <div class="mini-tabs" aria-hidden="true">
+                <span class="active">展示率</span>
+                <span>首位率</span>
+                <span>前三率</span>
+              </div>
+            </div>
+            <div class="trend-visual" aria-hidden="true">
+              <span style="height: 34%"></span>
+              <span style="height: 46%"></span>
+              <span style="height: 43%"></span>
+              <span style="height: 55%"></span>
+              <span style="height: 61%"></span>
+              <span style="height: 57%"></span>
+              <span style="height: 68%"></span>
+              <span style="height: 71%"></span>
+              <span style="height: 73%"></span>
+              <span style="height: 69%"></span>
+              <span style="height: 76%"></span>
+              <span style="height: 73%"></span>
+            </div>
+          </section>
+
+          <section class="rank-panel" aria-label="平台表现排行">
+            <div class="section-head compact">
+              <div>
+                <p class="eyebrow">Ranking</p>
+                <h3>平台表现排行</h3>
+              </div>
+            </div>
+            <div id="platformCards" class="platform-cards"></div>
+          </section>
+        </div>
 
         <div class="sales-script">
           <h3>销售判断</h3>
@@ -293,10 +361,12 @@
       </section>
     </main>
 
-    <footer class="site-footer">
-      <p>检测口径：模拟检测用于销售首轮诊断；真实采样会调用已配置模型、多轮采样并保留原始回答。豆包、通义、腾讯元宝等平台如未接入官方 API，会以当前采样模型模拟对应平台口径。</p>
-    </footer>
+        <footer class="site-footer">
+          <p>检测口径：模拟检测用于销售首轮诊断；真实采样会调用已配置模型、多轮采样并保留原始回答。豆包、通义、腾讯元宝等平台如未接入官方 API，会以当前采样模型模拟对应平台口径。</p>
+        </footer>
+      </div>
+    </div>
 
-    <script src="/app.js?v=20260528-runner" type="module"></script>
+    <script src="/app.js?v=20260616-dashboard" type="module"></script>
   </body>
 </html>

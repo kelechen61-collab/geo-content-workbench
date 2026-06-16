@@ -41,7 +41,7 @@ const state = {
   report: null,
   activeView: "risks",
   visibilityReport: null,
-  activePage: "auditPage"
+  activePage: "visibilityPage"
 };
 
 function lines(value) {
@@ -588,3 +588,4 @@ fillForm(demoData);
 renderReport(buildReport());
 fillVisibilityForm(visibilityDemoData);
 renderVisibilityReport(buildVisibilityReport());
+switchPage("visibilityPage");
