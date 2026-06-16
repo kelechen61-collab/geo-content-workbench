@@ -388,7 +388,7 @@ async function buildRealVisibilityReport(payload = {}) {
     competitors
   }))));
 
-  const rows = await mapLimit(tasks, 3, async (task) => {
+  const rows = await mapLimit(tasks, 6, async (task) => {
     const provider = providerForPlatform(task.platform);
     if (!provider) return unavailableRow(task);
     providerNotes.push(`${task.platform}：${provider.note}`);
