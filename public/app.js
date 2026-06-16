@@ -430,7 +430,7 @@ function fillVisibilityForm(data) {
     const el = $(key);
     if (el) el.value = value;
   }
-  setPlatforms(["DeepSeek", "豆包", "腾讯元宝", "Kimi"]);
+  setPlatforms(["DeepSeek", "豆包"]);
   $("sampleCount").value = "3";
 }
 
@@ -438,7 +438,7 @@ function resetVisibilityForm() {
   ["targetBrand", "brandAliases", "visibilityBusiness", "visibilityKeywords", "visibilityCompetitors"].forEach((id) => {
     $(id).value = "";
   });
-  setPlatforms(["DeepSeek", "豆包", "腾讯元宝"]);
+  setPlatforms(["DeepSeek", "豆包"]);
   $("sampleCount").value = "3";
   renderVisibilityReport(buildVisibilityReport());
 }

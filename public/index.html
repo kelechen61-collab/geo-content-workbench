@@ -223,13 +223,13 @@
             <p>AI 平台</p>
             <label><input type="checkbox" name="platform" value="DeepSeek" checked /> DeepSeek</label>
             <label><input type="checkbox" name="platform" value="豆包" checked /> 豆包</label>
-            <label><input type="checkbox" name="platform" value="腾讯元宝" checked /> 腾讯元宝</label>
-            <label><input type="checkbox" name="platform" value="Kimi" checked /> Kimi</label>
+            <label><input type="checkbox" name="platform" value="腾讯元宝" /> 腾讯元宝</label>
+            <label><input type="checkbox" name="platform" value="Kimi" /> Kimi</label>
             <label><input type="checkbox" name="platform" value="通义千问" /> 通义千问</label>
             <label><input type="checkbox" name="platform" value="文心一言" /> 文心一言</label>
           </div>
 
-          <p class="sampling-hint wide">点击后只统计真实 API 返回的有效样本；未接入或失败样本会单独标记，不混入展示率。</p>
+          <p class="sampling-hint wide">当前已接入 DeepSeek 与豆包真实采样；未接入或失败样本会单独标记，不混入展示率。</p>
           <button id="runVisibilityBtn" class="primary wide" type="submit">开始真实采样</button>
         </form>
       </section>
@@ -368,6 +368,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260616-real-sampling" type="module"></script>
+    <script src="/app.js?v=20260616-real-sampling-2" type="module"></script>
   </body>
 </html>
