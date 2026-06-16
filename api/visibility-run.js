@@ -280,7 +280,7 @@ function failedRow({ brand, keyword, platform, sample, error, provider }) {
   };
 }
 
-function summarizeVisibilityReport({ brand, business, sampleCount, rows, platforms, keywords, providerNotes }) {
+function summarizeVisibilityReport({ brand, business, sampleCount, rows, platforms, keywords, providerNotes, truncatedKeywords }) {
   const validRows = rows.filter((row) => row.sampleQuality === "sampled");
   const failedRows = rows.filter((row) => row.sampleQuality === "failed");
   const unavailableRows = rows.filter((row) => row.sampleQuality === "unavailable");
@@ -321,6 +321,9 @@ function summarizeVisibilityReport({ brand, business, sampleCount, rows, platfor
     total
       ? `本次共有 ${total} 条真实有效样本参与统计，未接入或失败样本未计入展示率。`
       : "当前没有可用真实样本，不能给出有效展示率判断。请先配置至少一个平台 API。",
+    truncatedKeywords > 0
+      ? `同步采样为避免超时，当前只检测前 ${keywords.length} 个关键词；还有 ${truncatedKeywords} 个关键词建议分批检测。`
+      : `本次同步检测关键词数：${keywords.length} 个。`,
     unavailablePlatforms.length
       ? `未接入平台：${unavailablePlatforms.join("、")}。这些平台需要配置官方/兼容 API 或导入原始回答后再统计。`
       : "已选平台均产生了真实采样或明确失败记录。",
@@ -352,7 +355,9 @@ function summarizeVisibilityReport({ brand, business, sampleCount, rows, platfor
       validSamples: total,
       failedSamples: failedRows.length,
       unavailableSamples: unavailableRows.length,
-      metricRule: "展示率、前三率、首位率、中正率只用 sampleQuality=sampled 的真实样本计算；未接入和失败样本只计入覆盖率，不计入表现指标。"
+      keywordLimit: keywords.length,
+      truncatedKeywords,
+      metricRule: "展示率、前三率、首位率、中正率只用 sampleQuality=sampled 的真实样本计算；未接入和失败样本只计入覆盖率，不计入表现指标。同步模式为避免超时，会优先采样前 2 个关键词。"
     },
     generatedAt: new Date().toISOString()
   };
@@ -362,7 +367,9 @@ async function buildRealVisibilityReport(payload = {}) {
   const brand = String(payload.brand || "").trim() || "目标品牌";
   const business = String(payload.business || "").trim() || "核心业务";
   const aliases = brandAliases(brand, payload.aliases);
-  const keywords = splitLines(payload.keywords).slice(0, 8);
+  const allKeywords = splitLines(payload.keywords);
+  const maxSyncKeywords = Math.max(1, Math.min(3, Number(process.env.REAL_SAMPLING_MAX_KEYWORDS || 2)));
+  const keywords = allKeywords.slice(0, maxSyncKeywords);
   const competitors = splitLines(payload.competitors).slice(0, 10);
   const platforms = splitLines(payload.platforms).slice(0, 8);
   const sampleCount = Math.max(3, Math.min(5, Number(payload.sampleCount || 3)));
@@ -399,7 +406,8 @@ async function buildRealVisibilityReport(payload = {}) {
     rows,
     platforms: safePlatforms,
     keywords: safeKeywords,
-    providerNotes
+    providerNotes,
+    truncatedKeywords: Math.max(0, allKeywords.length - safeKeywords.length)
   });
 }
 

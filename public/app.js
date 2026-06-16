@@ -33,7 +33,7 @@ const visibilityDemoData = {
   targetBrand: "云栖增长科技",
   brandAliases: "云栖增长, 云栖GEO",
   visibilityBusiness: "GEO / AEO 内容优化服务",
-  visibilityKeywords: "GEO 服务哪家好\nAI 搜索优化公司\n品牌怎么被豆包推荐\n生成式搜索引擎优化服务\nChatGPT 品牌推荐优化",
+  visibilityKeywords: "GEO 服务哪家好\nAI 搜索优化公司",
   visibilityCompetitors: "传统 SEO 代运营\n内容营销机构\nAI 问答优化顾问\n增长咨询公司"
 };
 
