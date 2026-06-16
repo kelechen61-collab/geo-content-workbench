@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
+import visibilityRunHandler from "./api/visibility-run.js";
 
 const rootDir = resolve(process.cwd());
 const publicDir = join(rootDir, "public");
@@ -480,21 +481,22 @@ async function handleRules(res) {
 async function handleVisibilityRun(req, res) {
   try {
     const body = JSON.parse(await readBody(req) || "{}");
-    if (openRouterApiKey) {
-      const report = await buildOpenRouterVisibilityReport(body);
-      return sendJson(res, 200, {
-        ok: true,
-        mode: "openrouter-free",
-        model: openRouterModel,
-        report
-      });
-    }
-    sendJson(res, 200, {
-      ok: true,
-      mode: "local-sampler",
-      note: "未配置 OPENROUTER_API_KEY，已使用本地模拟采样器。",
-      report: buildVisibilityReport(body)
-    });
+    const adapter = {
+      method: req.method,
+      body,
+      setHeader(name, value) {
+        res.setHeader(name, value);
+      },
+      status(statusCode) {
+        res.statusCode = statusCode;
+        return this;
+      },
+      json(payload) {
+        res.setHeader("content-type", "application/json; charset=utf-8");
+        res.end(JSON.stringify(payload));
+      }
+    };
+    await visibilityRunHandler(adapter, adapter);
   } catch (error) {
     sendJson(res, 500, { error: error.message });
   }

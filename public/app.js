@@ -359,11 +359,12 @@ function buildVisibilityReport() {
 
 function renderPlatformCards(stats) {
   $("platformCards").innerHTML = stats.map((item) => `
-    <article class="platform-card">
+    <article class="platform-card ${item.status === "未接入" ? "unavailable" : item.status === "采样失败" ? "failed" : ""}">
       <div class="metric-top">
         <h3>${escapeHtml(item.platform)}</h3>
-        <strong>${item.mentionRate}%</strong>
+        <strong>${item.status === "已采样" || !item.status ? `${item.mentionRate}%` : escapeHtml(item.status)}</strong>
       </div>
+      <p class="sample-meta">有效 ${item.validSamples ?? "-"} / 失败 ${item.failedSamples ?? 0} / 未接入 ${item.unavailableSamples ?? 0}</p>
       <div class="platform-bars">
         <p><span>展示</span><i><b style="width:${item.mentionRate}%"></b></i></p>
         <p><span>前三</span><i><b style="width:${item.top3Rate}%"></b></i></p>
@@ -384,12 +385,12 @@ function renderVisibilityRows(rows) {
       <td>${row.rank ? `第 ${row.rank} 位` : "-"}</td>
       <td><span class="tone-badge ${row.tone === "偏负" ? "negative" : row.tone === "正向" ? "positive" : ""}">${escapeHtml(row.tone)}</span></td>
       <td>${escapeHtml(row.competitor)}</td>
-      <td><span class="rank-badge ${row.rank === 0 ? "miss" : row.rank === 1 ? "first" : row.rank <= 3 ? "top" : ""}">${escapeHtml(row.status)}</span></td>
+      <td><span class="rank-badge ${row.sampleQuality === "unavailable" ? "unavailable" : row.sampleQuality === "failed" ? "failed" : row.rank === 0 ? "miss" : row.rank === 1 ? "first" : row.rank <= 3 ? "top" : ""}">${escapeHtml(row.status)}</span></td>
       <td>${escapeHtml(row.matchedAlias || "-")}</td>
       <td>
         ${row.rawAnswer
           ? `<details><summary>查看证据</summary><p>${escapeHtml(row.rawAnswer)}</p><small>${escapeHtml(row.sampledAt || "")} · ${escapeHtml(row.sourceModel || row.mode || "")}</small></details>`
-          : `<span class="muted-cell">模拟无原文</span>`}
+          : `<span class="muted-cell">${row.sampleQuality === "unavailable" ? "平台未接入，暂无原文" : "暂无原文"}</span>`}
       </td>
     </tr>
   `).join("");
@@ -404,12 +405,16 @@ function renderVisibilityReport(report) {
   $("neutralRate").textContent = `${report.neutralRate}%`;
   $("avgRank").textContent = report.avgRank;
   $("visibilityTag").textContent = report.tag;
-  $("visibilityTag").classList.toggle("warn", report.mentionRate < 75);
+  $("visibilityTag").classList.toggle("warn", report.mentionRate < 75 || !report.methodology?.validSamples);
   $("samplingMode").textContent = `当前模式：${report.mode || "模拟检测"}`;
-  $("samplingMode").classList.toggle("real", report.mode === "真实采样");
-  $("samplingMeta").textContent = `采样数：${report.rows.length} 条 · 生成时间：${report.generatedAt ? new Date(report.generatedAt).toLocaleString("zh-CN") : "-"}`;
+  $("samplingMode").classList.toggle("real", String(report.mode || "").includes("真实"));
+  $("samplingMeta").textContent = report.methodology
+    ? `有效样本：${report.methodology.validSamples} / 请求样本：${report.methodology.requestedSamples} / 未接入：${report.methodology.unavailableSamples} / 失败：${report.methodology.failedSamples}`
+    : `采样数：${report.rows.length} 条 · 生成时间：${report.generatedAt ? new Date(report.generatedAt).toLocaleString("zh-CN") : "-"}`;
   $("evidenceNote").textContent = report.evidenceNote || "已生成检测结果。";
-  $("visibilityPitch").textContent = `${report.brand} 当前按每个平台 ${report.sampleCount || 3} 次采样跑数，展示率为 ${report.mentionRate}%，前三率为 ${report.top3Rate}%，首位率为 ${report.firstRate}%，中正率为 ${report.neutralRate}%。销售沟通重点可以放在“AI 推荐位被竞品占用”“标准答案资产不足”和“品牌口径需要校准”三个问题上。`;
+  $("visibilityPitch").textContent = report.methodology?.validSamples
+    ? `${report.brand} 当前按每个平台 ${report.sampleCount || 3} 次采样跑数，有效真实样本 ${report.methodology.validSamples} 条，展示率为 ${report.mentionRate}%，前三率为 ${report.top3Rate}%，首位率为 ${report.firstRate}%。未接入和失败样本没有混入表现指标。`
+    : `${report.brand} 当前没有可用真实样本，不能判断展示率。请先配置 DeepSeek/豆包/通义/Kimi 等平台 API，或导入平台原始回答后再统计。`;
   renderPlatformCards(report.platformStats);
   renderVisibilityRows(report.rows);
   $("visibilityFindings").innerHTML = report.findings.map((item, index) => `
@@ -449,10 +454,14 @@ function visibilityReportText(report) {
     `检测模式：${report.mode || "模拟检测"}`,
     `生成时间：${report.generatedAt || "-"}`,
     `采样次数：每个平台 ${report.sampleCount || 3} 次`,
+    report.methodology
+      ? `样本口径：有效 ${report.methodology.validSamples} / 请求 ${report.methodology.requestedSamples} / 失败 ${report.methodology.failedSamples} / 未接入 ${report.methodology.unavailableSamples}`
+      : "",
     `证据说明：${report.evidenceNote || "-"}`,
+    report.methodology?.metricRule ? `统计规则：${report.methodology.metricRule}` : "",
     "",
     "平台表现：",
-    ...report.platformStats.map((item) => `${item.platform}：展示率 ${item.mentionRate}% / 前三率 ${item.top3Rate}% / 首位率 ${item.firstRate}% / 中正率 ${item.neutralRate}%`),
+    ...report.platformStats.map((item) => `${item.platform}：${item.status || "已采样"} / 有效样本 ${item.validSamples ?? "-"} / 展示率 ${item.mentionRate}% / 前三率 ${item.top3Rate}% / 首位率 ${item.firstRate}% / 中正率 ${item.neutralRate}%`),
     "",
     "优先修复方向：",
     ...report.findings.map((item, index) => `${index + 1}. ${item}`)
@@ -506,7 +515,7 @@ function switchPage(pageId) {
 async function runVisibilityAudit() {
   const button = $("runVisibilityBtn");
   button.disabled = true;
-  button.textContent = "后台跑数中...";
+  button.textContent = "真实采样中...";
   try {
     const response = await fetch("/api/visibility-run", {
       method: "POST",
@@ -524,11 +533,45 @@ async function runVisibilityAudit() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "后台跑数失败");
     renderVisibilityReport(data.report);
-  } catch {
-    renderVisibilityReport(buildVisibilityReport());
+  } catch (error) {
+    const failedReport = {
+      brand: $("targetBrand").value.trim() || "目标品牌",
+      business: $("visibilityBusiness").value.trim() || "核心业务",
+      sampleCount: Number($("sampleCount").value || 3),
+      rows: [],
+      platformStats: selectedPlatforms().map((platform) => ({
+        platform,
+        mentionRate: 0,
+        top3Rate: 0,
+        firstRate: 0,
+        neutralRate: 0,
+        validSamples: 0,
+        failedSamples: 0,
+        unavailableSamples: 0,
+        requestedSamples: 0,
+        status: "采样失败"
+      })),
+      mentionRate: 0,
+      top3Rate: 0,
+      firstRate: 0,
+      neutralRate: 0,
+      avgRank: "-",
+      findings: ["真实采样请求失败，请检查 API 配置、网络或 Vercel 函数日志。", `错误信息：${error.message}`],
+      tag: "采样失败",
+      mode: "真实采样失败",
+      evidenceNote: "没有生成模拟兜底结果，避免误导数据判断。",
+      methodology: {
+        requestedSamples: 0,
+        validSamples: 0,
+        failedSamples: 0,
+        unavailableSamples: 0
+      },
+      generatedAt: new Date().toISOString()
+    };
+    renderVisibilityReport(failedReport);
   } finally {
     button.disabled = false;
-    button.textContent = "提交后台跑数";
+    button.textContent = "开始真实采样";
   }
 }
 

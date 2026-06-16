@@ -1319,8 +1319,41 @@ textarea {
   color: #173f57;
 }
 
+.platform-card.unavailable,
+.platform-card.failed {
+  background: linear-gradient(135deg, #fff7ed, #ffffff);
+}
+
+.platform-card.unavailable strong,
+.platform-card.failed strong {
+  color: #b95831;
+  font-size: 18px;
+}
+
+.sample-meta,
+.sampling-hint {
+  margin: 8px 0 0;
+  color: #738096;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.sampling-hint {
+  border: 1px dashed #d8deea;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px 12px;
+}
+
 .platform-bars b {
   background: linear-gradient(90deg, #7b5cf0, #10a38f);
+}
+
+.rank-badge.unavailable,
+.rank-badge.failed {
+  background: #fff7ed;
+  color: #b95831;
 }
 
 .visibility-input textarea {

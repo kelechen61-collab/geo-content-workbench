@@ -186,7 +186,7 @@
             <p class="eyebrow">Keyword Visibility</p>
             <h2>检测配置</h2>
           </div>
-          <span class="status-pill">销售快检</span>
+          <span class="status-pill">真实采样</span>
         </div>
 
         <form id="visibilityForm" class="form-grid">
@@ -229,7 +229,8 @@
             <label><input type="checkbox" name="platform" value="文心一言" /> 文心一言</label>
           </div>
 
-          <button id="runVisibilityBtn" class="primary wide" type="submit">提交后台跑数</button>
+          <p class="sampling-hint wide">点击后只统计真实 API 返回的有效样本；未接入或失败样本会单独标记，不混入展示率。</p>
+          <button id="runVisibilityBtn" class="primary wide" type="submit">开始真实采样</button>
         </form>
       </section>
 
@@ -367,6 +368,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260616-dashboard" type="module"></script>
+    <script src="/app.js?v=20260616-real-sampling" type="module"></script>
   </body>
 </html>
