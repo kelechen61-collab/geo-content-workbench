@@ -129,18 +129,14 @@ function chatEndpoint(baseUrl) {
 }
 
 function makeSamplingPrompt({ brand, aliases, business, keyword, platform, sample, competitors }) {
-  return `平台：${platform}
-用户问题：请推荐适合「${keyword}」的品牌或服务商，按推荐优先级列出。
-目标品牌：${brand}
-目标品牌别名：${aliases.join("、") || "无"}
-业务：${business}
-已知竞品：${competitors.join("、") || "无"}
-采样轮次：第${sample}次
+  return `请推荐适合「${keyword}」的品牌或服务商，按推荐优先级列出 5 个，并说明每个推荐理由。
 
-请以普通用户在该 AI 平台可能看到的自然回答形式先生成“原始回答”，再判断目标品牌是否出现、推荐排名、口径和主要竞品占位。
-只输出 JSON，字段必须是：
-{"rawAnswer":"原始回答全文","rank":0到5的整数,"matchedAlias":"命中的目标品牌或别名，未命中为空","tone":"正向|中性|偏负|未判断","competitor":"最主要占位竞品","status":"未展示|出现|前三|首位"}
-rank=0 表示原始回答中未出现目标品牌或其别名。`;
+背景：
+- 我正在评估「${business}」相关服务。
+- 可参考品牌包括但不限于：${[brand, ...competitors].filter(Boolean).join("、") || "无"}。
+- 如果你认为某个品牌不适合，也可以不推荐。
+
+请直接给出用户在 ${platform} 中会看到的自然回答，不要输出 JSON，不要说明你在做检测。`;
 }
 
 async function sampleOpenAICompatible(task, provider) {
@@ -156,7 +152,7 @@ async function sampleOpenAICompatible(task, provider) {
       messages: [
         {
           role: "system",
-          content: "你是GEO真实采样检测器。必须保留原始回答，判断必须基于原始回答全文。只输出JSON。"
+          content: `你是${task.platform}中的问答助手。请像真实用户问答一样自然回答，给出清晰推荐排序和理由。`
         },
         {
           role: "user",
@@ -168,6 +164,7 @@ async function sampleOpenAICompatible(task, provider) {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || data.message || `${provider.name} request failed`);
   const content = data.choices?.[0]?.message?.content || "";
+  if (String(content).trim().length < 20) throw new Error(`${provider.name} returned empty answer`);
   const parsed = parseSample(content, task.aliases, task.competitors);
   return {
     keyword: task.keyword,
